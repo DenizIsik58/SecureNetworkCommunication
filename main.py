@@ -15,8 +15,11 @@ Information about Alice and Bob's agreement
 # They have agreed upon using this hashing algorithm and asymmetric cryptography tool beforehand.
 
 
-Link to cryptography.hazmat
+Link on how to use cryptography.hazmat library
 https://nitratine.net/blog/post/asymmetric-encryption-and-decryption-in-python/
+
+Original docs:
+https://cryptography.io/en/latest/
 
 """
 
