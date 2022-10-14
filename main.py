@@ -99,7 +99,7 @@ def verify_signature(signature, message, public_key):
 
 # Hash the commitment with a randomness and the random number of dice (integer between 1-6)
 def sha512_hashing(randomness, message):
-    return hashlib.sha512(str(randomness + message).encode("utf-8")).digest()
+    return hashlib.sha512(str(str(randomness) + str(message)).encode("utf-8")).digest()
 
 
 def commitment(randomness, message):
@@ -155,6 +155,9 @@ def hit_pack_and_send(playerId, sender, receiver, randomness):
 
     print(current_player + " now commits their message using hash based commitment:")
     hashed_message = commitment(randomness, dice_hit)
+
+    print(f"randomness: {randomness}. dice hit: {dice_hit}")
+
     set_randomness_and_hit_by_id(playerId, dice_hit, randomness)
     print(hashed_message)
     time.sleep(3)
@@ -169,18 +172,20 @@ def hit_pack_and_send(playerId, sender, receiver, randomness):
 
     print(current_player + " now encrypts their message.....")
     encrypted_message = encrypt_message(receiver.public_key(), hashed_message)
-    print(encrypted_message)
+    print(f"Encrypted message: {encrypted_message}")
     time.sleep(4)
 
     print( "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
-    print(opposite_player + " has now received the message from " + current_player + " and is going to decrypt it")
+    print(opposite_player + " has now received the encrypted message and signature from " + current_player + " and is going to decrypt and verify it")
     print("Decrypting message....\n")
     time.sleep(4)
     hash_after_decryption = decrypt_message(receiver, encrypted_message)
-    print(f"Now {opposite_player} need to make sure that " + current_player + " sent this message")
+    print(f"Decrypted message: {hash_after_decryption}")
+    time.sleep(2)
+    print(f"Now {opposite_player} need to make sure that {current_player} sent this message")
     verified = verify_signature(signature, hash_after_decryption, sender.public_key())
-    print("Verifying message from " + current_player + ".....")
+    print(f"Verifying message from {current_player} ....")
     if not verified:
         print("Adversary attacking us!!!")
         return
@@ -196,74 +201,86 @@ def hit_pack_and_send(playerId, sender, receiver, randomness):
 
 # Reveal
 def reveal(player_id, hash, receiver, sender):
-    global bob_randomness
+    randomness = None
+    hit = None
 
-    if player_id == 1:
-        print("As a reminder, the current hash Alice has in her hands from before is: \n \n " + str(hash) + " \n \n")
-        time.sleep(8)
-        print("Bob is now sending over his randomness and m over to Alice...")
-        time.sleep(5)
-        message = str(str(bob_randomness) + str(bob_hit))
-        print(message)
-        print("Encrypting message...")
-        time.sleep(3)
-        encrypted = encrypt_message(receiver.public_key(), message.encode("utf-8"))
-        print(encrypted)
-        time.sleep(2)
-        print("Signing message...")
-        time.sleep(2)
-        signed = sign_message(sender, encrypted)
-        print(signed)
-        time.sleep(3)
-
-        print()
-        verified = verify_signature(signed, encrypted, sender.public_key())
-        print("Verifying signatures...")
-        time.sleep(4)
-        if not verified:
-            print("Attacker!!!")
-            return
-        print(verified)
-        print("Alice now decrypts the message..")
-        time.sleep(3)
-        decrypted = str(decrypt_message(receiver, encrypted).decode("utf-8"))
-        print(decrypted)
-        time.sleep(3)
-        randomness, dice_hit = decrypted[:len(decrypted)-1], decrypted[-1]
-        print(f"randomness: {randomness}")
-        print(f"dice hit: {dice_hit}")
-        print("Alice now calculates her own version of the hash by appending the randomness and m together using sha512.... \n")
-        time.sleep(4)
-
-        alices_own_version_of_hash = sha512_hashing(bob_randomness, bob_hit)
-        print(str(alices_own_version_of_hash))
-        print()
-        time.sleep(3)
-        print("Shes now comparing her own version ....")
-        time.sleep(3)
-        print("Did Bob tell the truth?? " + str(is_both_hashes_equal(hash, alices_own_version_of_hash)) + " \n")
-
+    if (player_id == 1):
+        randomness = bob_randomness
+        hit = bob_hit
     elif player_id == 2:
-        print("As a reminder, the current hash Bob has in her hands from before is: \n \n " + str(hash) + " \n \n")
-        print("Alice is now sending over her randomness and m over to Bob...\n")
-        time.sleep(3)
-        print((alice_randomness, alice_hit))
+        randomness = alice_randomness
+        hit = alice_hit
 
-        print()
+    current_player, opposite_player = get_player_by_id(player_id)
+    #if player_id == 1:
+    print(f"As a reminder, the current hash {current_player} has in their hands from before is: \n \n " + str(hash) + " \n \n")
+    time.sleep(8)
+    print(f"{opposite_player} is now sending over their randomness and m over to {current_player}...")
+    time.sleep(5)
+    message = str(str(randomness) + " " + str(hit))
+    print(message)
+    print("Encrypting message...")
+    time.sleep(3)
+    encrypted = encrypt_message(receiver.public_key(), message.encode("utf-8"))
+    print(encrypted)
+    time.sleep(2)
+    print("Signing message...")
+    time.sleep(2)
+    signature = sign_message(sender, encrypted)
+    print(signature)
+    time.sleep(3)
 
-        print(
-            "Bob now calculates his own version of the hash by appending the randomness and m together using sha256....")
-        time.sleep(4)
-        bob_own_version_of_hash = sha512_hashing(alice_randomness, alice_hit)
-        print()
-        print(str(bob_own_version_of_hash))
-        print()
-        print("He is now comparing his own version ....")
-        print()
-        time.sleep(3)
-        print("Did Alice tell the truth?? " + str(is_both_hashes_equal(hash, bob_own_version_of_hash)))
+    print("--------------------------------------------")
+    print(f"{current_player} has now received the signature and the encrypted message containing the randomness and the dice hit")
+    print()
 
+    verified = verify_signature(signature, encrypted, sender.public_key())
+    print("Verifying signatures...")
+    time.sleep(4)
+    if not verified:
+        print("Attacker!!!")
+        return
+    print(verified)
+    print(f"{current_player} now decrypts the message..")
+    time.sleep(3)
+    decrypted = str(decrypt_message(receiver, encrypted).decode("utf-8"))
+    print(f"Decrypted: {decrypted} ")
+    time.sleep(3)
+    randomness, dice_hit = decrypted.split(" ")[0], decrypted.split(" ")[1]
+    print(f"randomness: {randomness}")
+    print(f"dice hit: {dice_hit}")
+    print(f"{current_player} now calculates their own version of the hash by appending the randomness and m together using sha512.... \n")
+    time.sleep(4)
 
+    own_version_of_hash = sha512_hashing(randomness, hit)
+    print(str(own_version_of_hash))
+    print()
+    time.sleep(3)
+    print("Shes now comparing her own version ....")
+    time.sleep(3)
+    print("Did Bob tell the truth?? " + str(is_both_hashes_equal(hash, own_version_of_hash)) + " \n")
+"""
+#elif player_id == 2:
+    print("As a reminder, the current hash Bob has in her hands from before is: \n \n " + str(hash) + " \n \n")
+    print("Alice is now sending over her randomness and m over to Bob...\n")
+    time.sleep(3)
+    print((alice_randomness, alice_hit))
+
+    print()
+
+    print(
+        "Bob now calculates his own version of the hash by appending the randomness and m together using sha256....")
+    time.sleep(4)
+    bob_own_version_of_hash = sha512_hashing(alice_randomness, alice_hit)
+    print()
+    print(str(bob_own_version_of_hash))
+    print()
+    print("He is now comparing his own version ....")
+    print()
+    time.sleep(3)
+    print("Did Alice tell the truth?? " + str(is_both_hashes_equal(hash, bob_own_version_of_hash)))
+
+"""
 def get_player_by_id(player_id):
     current_player, opposite_player = "", ""
 
@@ -289,17 +306,16 @@ def test():
 
         alice_id = 1
         alice_key = generate_key()
-        alice_hash_from_bob = None
+        alice_hash_in_hand = None
 
         bob_id = 2
         bob_key = generate_key()
-        bob_hash_from_alice = None
+        bob_hash_in_hand = None
 
 
         print("\nREAD CAREFULLY!!! :D \n")
         print(
-            "Bob and Alice both agree on using sha512 hashing algorithm and asymmetric cryptography from the cryptography.hazmat library \n"
-            "They meet on a park and exchange their keys")
+            "Bob and Alice both agree on using sha512 hashing algorithm and asymmetric cryptography from the cryptography.hazmat library \n")
         time.sleep(7)
         print()
         print("Generating Alice's key...")
@@ -337,34 +353,30 @@ def test():
                 ## Alice's turn
                 if current_user_turn == 1:
                     alice_randomness = random.randint(1231231234512312, 12323451231231212312312)
-                    bob_hash_from_alice, valid_hit = hit_pack_and_send(alice_id, alice_key, bob_key, alice_randomness)
-                    if valid_hit and bob_hash_from_alice is not None:
+                    bob_hash_in_hand, valid_hit = hit_pack_and_send(alice_id, alice_key, bob_key, alice_randomness)
+                    if valid_hit and bob_hash_in_hand is not None:
                         current_user_turn = 2
 
                 ## Bob's turn
                 elif current_user_turn == 2:
                     bob_randomness = random.randint(45233453453452, 3454534534534534534)
-                    alice_hash_from_bob, valid_hit = hit_pack_and_send(bob_id, bob_key, alice_key, bob_randomness)
-                    if valid_hit and bob_hash_from_alice is not None and alice_hash_from_bob is not None:
+                    alice_hash_in_hand, valid_hit = hit_pack_and_send(bob_id, bob_key, alice_key, bob_randomness)
+                    if valid_hit and bob_hash_in_hand is not None and alice_hash_in_hand is not None:
                         current_state = 2
                         current_user_turn = 1
                         print("It's time for reveal!!")
                         time.sleep(5)
-
-
 
             elif current_state == 2:
                 current_playername, opposite_playername = get_player_by_id(current_user_turn)
 
                 if (current_user_turn == 1):
                     print("\nStarting off with " + current_playername + " \n")
-                    reveal(current_user_turn, alice_hash_from_bob, alice_key, bob_key)
+                    reveal(current_user_turn, alice_hash_in_hand, alice_key, bob_key)
                     current_user_turn = 2
-                    input("Press enter when you are ready!")
                 elif current_user_turn == 2:
-                    input("Press enter when you are ready!")
                     print("Next, " + current_playername)
-                    reveal(current_user_turn,bob_hash_from_alice, bob_key, alice_key)
+                    reveal(current_user_turn, bob_hash_in_hand, bob_key, alice_key)
                     current_state = 3
 
 
