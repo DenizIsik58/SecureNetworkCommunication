@@ -164,33 +164,35 @@ def hit_pack_and_send(playerId, sender, receiver, randomness):
 
     print("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
-    print("Now it's time to sign the hashed message..")
-    time.sleep(4)
-    signature = sign_message(sender, hashed_message)
-    print("Signature: " + str(signature) + " \n")
-    time.sleep(1)
-
     print(current_player + " now encrypts their message.....")
     encrypted_message = encrypt_message(receiver.public_key(), hashed_message)
     print(f"Encrypted message: {encrypted_message}")
     time.sleep(4)
 
+    print("Now it's time to sign the encrypted message..")
+    time.sleep(4)
+    signature = sign_message(sender, encrypted_message)
+    print("Signature: " + str(signature) + " \n")
+    time.sleep(1)
+
+
     print( "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
     print(opposite_player + " has now received the encrypted message and signature from " + current_player + " and is going to decrypt and verify it")
-    print("Decrypting message....\n")
-    time.sleep(4)
-    hash_after_decryption = decrypt_message(receiver, encrypted_message)
-    print(f"Decrypted message: {hash_after_decryption}")
-    time.sleep(2)
     print(f"Now {opposite_player} need to make sure that {current_player} sent this message")
-    verified = verify_signature(signature, hash_after_decryption, sender.public_key())
+    verified = verify_signature(signature, encrypted_message, sender.public_key())
     print(f"Verifying message from {current_player} ....")
     if not verified:
         print("Adversary attacking us!!!")
         return
     time.sleep(4)
     print(verified)
+    time.sleep(2)
+    print("Decrypting message....\n")
+    time.sleep(4)
+    hash_after_decryption = decrypt_message(receiver, encrypted_message)
+    print(f"Decrypted message: {hash_after_decryption}")
+
     time.sleep(2)
     print("Hash after decrypting: " + str(hash_after_decryption))
 
