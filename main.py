@@ -178,7 +178,7 @@ def hit_pack_and_send(playerId, sender, receiver, randomness):
 
     print( "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
 
-    print(opposite_player + " has now received the encrypted message and signature from " + current_player + " and is going to decrypt and verify it")
+    print(opposite_player + " has now received the encrypted message and signature from " + current_player + " and is going to verify and decrypt it")
     print(f"Now {opposite_player} need to make sure that {current_player} sent this message")
     verified = verify_signature(signature, encrypted_message, sender.public_key())
     print(f"Verifying message from {current_player} ....")
@@ -301,7 +301,7 @@ def reset():
 
 
 
-def test():
+def play():
     while True:
         global alice_hit
         global bob_hit
@@ -317,7 +317,7 @@ def test():
 
         print("\nREAD CAREFULLY!!! :D \n")
         print(
-            "Bob and Alice both agree on using sha512 hashing algorithm and asymmetric cryptography from the cryptography.hazmat library \n")
+            "Bob and Alice both agree on using sha512 hashing algorithm and RSA asymmetric cryptography from the cryptography.hazmat library \n")
         time.sleep(7)
         print()
         print("Generating Alice's key...")
@@ -383,14 +383,12 @@ def test():
 
 
             elif current_state == 3:
-                print("Alice hits: " + str(alice_hit))
-                print("bob hits: " + str(bob_hit))
-                if alice_hit > bob_hit:
-                    print("Alice won!!!")
-                elif bob_hit > alice_hit:
-                    print("Bob won!!!")
-                else:
-                    print("Tie! :( \n")
+                XOR = alice_hit ^ bob_hit
+                roll = (XOR % 6) + 1
+
+                print("Alice and Bob have both agreed on")
+                time.sleep(2)
+                print(f"{int(roll)}!")
 
                 time.sleep(2)
 
@@ -401,4 +399,4 @@ def test():
                 else:
                    return
 
-test()
+play()
